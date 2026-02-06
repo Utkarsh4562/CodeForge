@@ -1,0 +1,11 @@
+# backend
+node_modules/
+.env
+
+# frontend 
+leetcode frontend/node_modules/
+leetcode frontend/dist/
+leetcode frontend/build/
+
+# general
+.DS_Store

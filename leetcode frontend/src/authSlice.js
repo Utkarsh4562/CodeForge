@@ -1,6 +1,5 @@
-// in this file name we did not write file name as authSlice.jsx because here we will only write pure function and code of java script no jsx code will here 
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import axiosClient from './utils/axiosClient';
+import axiosClient from '../utils/axiosClient';
 
 // Register user
 export const registerUser = createAsyncThunk(
@@ -8,7 +7,13 @@ export const registerUser = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await axiosClient.post('/user/register', userData);
-      // return user if backend sends it, otherwise fallback to submitted data
+      
+      // ✅ TOKEN SAVE
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        console.log('✅ Token saved after registration');
+      }
+      
       return response.data.user || userData;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -22,6 +27,15 @@ export const loginUser = createAsyncThunk(
   async (loginData, { rejectWithValue }) => {
     try {
       const response = await axiosClient.post('/user/login', loginData);
+      
+      // ✅ TOKEN SAVE
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        console.log('✅ Token saved to localStorage');
+      } else {
+        console.warn('⚠️ No token in response:', response.data);
+      }
+      
       return response.data.user;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -48,6 +62,7 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await axiosClient.post('/user/logout');
+      localStorage.removeItem('token');  // ✅ REMOVE TOKEN
       return null;
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
@@ -73,7 +88,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = true;   // ✅ always true on success
+        state.isAuthenticated = true;
         state.user = action.payload;
       })
       .addCase(registerUser.rejected, (state, action) => {

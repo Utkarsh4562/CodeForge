@@ -23,8 +23,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// ✅ FIXED: Handle preflight requests with SLASH
-app.options('/*', cors(corsOptions));  // ⬅️ LINE 27 FIXED!
+// ✅ REMOVED: Problematic app.options line - CORS middleware already handles OPTIONS
+// app.options('/*', cors(corsOptions));  // ⬅️ THIS LINE CAUSES ERROR - REMOVED
 
 // Parse JSON bodies
 app.use(express.json());

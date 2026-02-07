@@ -11,9 +11,9 @@ const aiRouter = require("./routes/AiChating");
 const videoRouter = require("./routes/videoCreator")
 const cors = require('cors');
 
-// Enable CORS for your frontend
+// ✅ Netlify URL ADD KARO YAHAN
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: ['https://codeforg.netlify.app', 'http://localhost:5173'],
     credentials: true
 }));
 

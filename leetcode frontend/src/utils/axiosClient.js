@@ -1,7 +1,7 @@
 import axios from "axios";  // ✅ IMPORT AXIOS, NOT SELF
 
 const axiosClient = axios.create({
-    baseURL: 'https://codeforge-3nac.onrender.com',
+    baseURL: 'http://localhost:4000',
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosClient from '../utils/axiosClient';
 import { logoutUser } from '../authSlice';
 
 function Homepage() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { user } = useSelector((state) => state.auth);
     const [problems, setProblems] = useState([]);
     const [solvedProblems, setSolvedProblems] = useState([]);
@@ -18,8 +19,8 @@ function Homepage() {
     useEffect(() => {
         const fetchProblems = async () => {
             try {
-                const { data } = await axiosClient.get('/problem/all');
-                setProblems(data);
+                const response = await axiosClient.get('/problem/all');
+                setProblems(Array.isArray(response.data) ? response.data : []);
             } catch (error) {
                 console.error('Error fetching Problems:', error);
             }
@@ -27,8 +28,8 @@ function Homepage() {
 
         const fetchSolvedProblems = async () => {
             try {
-                const { data } = await axiosClient.get("/problem/solved-by-user");
-                setSolvedProblems(data);
+                const response = await axiosClient.get("/problem/solved-by-user");
+                setSolvedProblems(Array.isArray(response.data) ? response.data : []);
             } catch (err) {
                 console.error('Error fetching solved problems:', err);
             }
@@ -38,9 +39,10 @@ function Homepage() {
         if (user) fetchSolvedProblems();
     }, [user]);
 
-    const handleLogout = () => {
-        dispatch(logoutUser());
+    const handleLogout = async () => {
+        await dispatch(logoutUser());
         setSolvedProblems([]);
+        window.location.reload();
     };
 
     const filteredProblems = problems.filter(problem => {
@@ -158,47 +160,53 @@ function Homepage() {
                 
                 {/* User dropdown in top right corner */}
                 <div className="flex-none gap-2">
-                    <div className="dropdown dropdown-end">
-                        <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-                            <div className="w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg">
-                                {user?.firstName?.charAt(0) || 'U'}
-                            </div>
-                        </div>
-                        <ul tabIndex={0} className="mt-3 z-50 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
-                            <li className="p-3 border-b border-base-300">
-                                <div className="flex flex-col">
-                                    <span className="font-semibold text-base">{user?.firstName} {user?.lastName}</span>
-                                    <span className="text-sm text-gray-500">{user?.email}</span>
+                    {user ? (
+                        <div className="dropdown dropdown-end">
+                            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                                <div className="w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg">
+                                    {user?.firstName?.charAt(0) || 'U'}
                                 </div>
-                            </li>
-                            <li>
-                                <button 
-                                    onClick={handleLogout} 
-                                    className="text-red-500 hover:bg-red-50 hover:text-red-600 py-2 px-3 rounded flex items-center gap-2"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-                                    </svg>
-                                    Logout
-                                </button>
-                            </li>
-                            {user?.role === 'admin' && (
-    <li>
-        <NavLink
-            to="/admin"
-            className="hover:bg-blue-50 hover:text-blue-600 py-2 px-3 rounded flex items-center gap-2"
-        >
-            {/* <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
-                 viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M9 12l2 2 4-4M12 3l9 4.5-9 4.5L3 7.5 12 3z" />
-            </svg> */}
-            Admin Panel
-        </NavLink>
-    </li>
-)}
-                        </ul>
-                    </div>
+                            </div>
+                            <ul tabIndex={0} className="mt-3 z-50 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+                                <li className="p-3 border-b border-base-300">
+                                    <div className="flex flex-col">
+                                        <span className="font-semibold text-base">{user?.firstName} {user?.lastName}</span>
+                                        <span className="text-sm text-gray-500">{user?.email}</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <button 
+                                        onClick={handleLogout} 
+                                        className="text-red-500 hover:bg-red-50 hover:text-red-600 py-2 px-3 rounded flex items-center gap-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                                        </svg>
+                                        Logout
+                                    </button>
+                                </li>
+                                {user?.role === 'admin' && (
+                                    <li>
+                                        <NavLink
+                                            to="/admin"
+                                            className="hover:bg-blue-50 hover:text-blue-600 py-2 px-3 rounded flex items-center gap-2"
+                                        >
+                                            Admin Panel
+                                        </NavLink>
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                            <NavLink to="/login" className="btn btn-ghost">
+                                Login
+                            </NavLink>
+                            <NavLink to="/signup" className="btn btn-primary">
+                                Sign Up
+                            </NavLink>
+                        </div>
+                    )}
                 </div>
             </nav>
 

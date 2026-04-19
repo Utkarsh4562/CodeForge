@@ -33,34 +33,56 @@ const submitCode = async (req, res) => {
     });
 
     let passedTestCases = 0; // Counter for passed hidden test cases
+    let firstError = null; // Store first error message
 
     // Loop through each hidden test case
     for (let testCase of problem.hiddenTestCases) {
-      // Ensure input and output are strings to avoid runtime issues
-      const input = testCase.input.toString();
-      const expected = testCase.output.toString();
+      try {
+        // Ensure input and output are strings to avoid runtime issues
+        const input = testCase.input.toString().trim();
+        const expected = testCase.output.toString().trim();
 
-      // Run code using Piston utility
-      const result = await executePiston(code, language, input);
+        // Run code using Piston utility
+        const result = await executePiston(code, language, input);
 
-      // If Piston returns error, mark submission as runtime error
-      if (result.error) {
-        submission.status = "runtime error"; // valid enum
-        submission.errorMessage = result.error; // store Piston error message
-        await submission.save();
-        return res.json(submission); // return full submission document
+        // If Piston returns error, mark submission as runtime error
+        if (result.error) {
+          if (!firstError) {
+            firstError = result.error;
+          }
+          console.log(`Test case failed with error: ${result.error}`);
+          continue; // Try next test case to see how many pass
+        }
+
+        // Normalize output: trim, convert to string, handle line endings
+        const actual = result.output.toString().trim();
+        
+        // Compare output with expected (trim spaces and normalize line endings)
+        if (actual === expected) {
+          passedTestCases++;
+        } else {
+          console.log(`Output mismatch for input "${input}"`);
+          console.log(`Expected: "${expected}"`);
+          console.log(`Got: "${actual}"`);
+        }
+      } catch (testError) {
+        console.log(`Error running test case: ${testError.message}`);
+        if (!firstError) {
+          firstError = testError.message;
+        }
       }
-
-      // Compare output with expected (trim spaces)
-      if (result.output.trim() === expected.trim()) passedTestCases++;
     }
 
-    // Update submission with test case results
-    submission.testCasesPassed = passedTestCases;
-    submission.status =
-      passedTestCases === problem.hiddenTestCases.length
-        ? "accepted"    // all test cases passed
-        : "wrong answer"; // some test cases failed
+    // Determine final status
+    if (firstError && passedTestCases === 0) {
+      submission.status = "runtime error";
+      submission.errorMessage = firstError;
+    } else if (passedTestCases === problem.hiddenTestCases.length) {
+      submission.status = "accepted";
+    } else {
+      submission.status = "wrong answer";
+      submission.errorMessage = firstError || "Some test cases failed";
+    }
 
     // Save updated submission
     await submission.save();
@@ -68,7 +90,7 @@ const submitCode = async (req, res) => {
     console.log("Submission Status:", submission.status);
     console.log("Test Cases Passed:", passedTestCases, "Total:", problem.hiddenTestCases.length);
 
-    // problem ko insert karenge userSchema ke problemSolved mein if it is accepted
+    // Add problem to user's problemSolved if accepted
     if(submission.status === "accepted"){ 
       console.log("Adding to problemSolved", "problemId:", problemId);
       try {
@@ -93,7 +115,7 @@ const submitCode = async (req, res) => {
 
   } catch (err) {
     console.log("SUBMIT ERROR ", err);
-    return res.status(500).send("server error");
+    return res.status(500).send("server error: " + err.message);
   }
 };
 
@@ -115,30 +137,46 @@ try{
   const testResults = [];
   
   for(let testCase of problem.visibleTestCases) {
-    const input = testCase.input.toString();
-    const expected = testCase.output.toString();
+    try {
+      const input = testCase.input.toString().trim();
+      const expected = testCase.output.toString().trim();
 
-    // Run code using Piston utility
-    const result = await executePiston(code, language, input);
+      // Run code using Piston utility
+      const result = await executePiston(code, language, input);
 
-    // If Piston returns error
-    if(result.error) {
+      // Prepare result object
+      const testResult = {
+        input: testCase.input,
+        expected: testCase.output,
+        passed: false,
+        error: null
+      };
+
+      // If Piston returns error
+      if(result.error) {
+        testResult.actual = null;
+        testResult.error = result.error;
+      } else {
+        // Normalize output
+        const actual = result.output.toString().trim();
+        testResult.actual = result.output; // Return full output with formatting
+        
+        // Compare output with expected
+        testResult.passed = actual === expected;
+        
+        if (!testResult.passed) {
+          testResult.error = `Output mismatch. Expected: "${expected}", Got: "${actual}"`;
+        }
+      }
+
+      testResults.push(testResult);
+    } catch(testError) {
       testResults.push({
         input: testCase.input,
         expected: testCase.output,
         actual: null,
         passed: false,
-        error: result.error
-      });
-    } else {
-      // Compare output with expected (trim spaces)
-      const passed = result.output.trim() === expected.trim();
-      testResults.push({
-        input: testCase.input,
-        expected: testCase.output,
-        actual: result.output,
-        passed: passed,
-        error: null
+        error: testError.message
       });
     }
   }

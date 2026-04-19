@@ -180,6 +180,32 @@ const getAllproblem = async (req, res) => {
   }
 };
 
+const getMyProblems = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        message: "User ID is missing", 
+        error: "Unauthorized" 
+      });
+    }
+
+    const myProblems = await problem.find({ problemCreator: userId })
+      .select('_id title description tags difficulty createdAt');
+
+    if (!myProblems || myProblems.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    res.status(200).json(myProblems);
+
+  } catch (err) {
+    console.error("Error in getMyProblems:", err);
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
 const solvedAllProblembyUser = async(req,res)=>{
 try{
      const userId = req.result._id;
@@ -277,6 +303,7 @@ module.exports = {
   deleteProblem, 
   getProblemById, 
   getAllproblem, 
+  getMyProblems,
   solvedAllProblembyUser, 
   submittedProblem,
   getProblemSolutions  // ADDED: Export the new function

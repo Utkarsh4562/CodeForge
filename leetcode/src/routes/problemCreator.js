@@ -10,6 +10,7 @@ const {
   deleteProblem,
   getProblemById,
   getAllproblem,
+  getMyProblems,
   solvedAllProblembyUser,
   submittedProblem,
   getProblemSolutions  // NEW: Add this import
@@ -25,6 +26,11 @@ problemRouter.post('/test', (req, res) => {
   });
 });
 
+/* ================= PUBLIC ROUTES ================= */
+// Anyone can view all problems (no authentication needed)
+
+problemRouter.get("/all", getAllproblem);
+
 /* ================= ADMIN ROUTES ================= */
 // Only admin can create, update, delete problems
 
@@ -38,8 +44,8 @@ problemRouter.delete("/delete/:id", adminMiddleware, deleteProblem);
 // Get single problem by id
 problemRouter.get("/problem-by-id/:id", userMiddleware, getProblemById);
 
-// Get all problems
-problemRouter.get("/all", userMiddleware, getAllproblem);
+// Get my created problems
+problemRouter.get("/my-problems", userMiddleware, getMyProblems);
 
 // Get how many problems user has solved
 problemRouter.get("/solved-by-user", userMiddleware, solvedAllProblembyUser);

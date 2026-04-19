@@ -13,7 +13,7 @@ const cors = require('cors');
 
 // ✅ IMPROVED CORS CONFIG
 const corsOptions = {
-  origin: ['https://codeforg.netlify.app', 'http://localhost:5173'],
+  origin: ['https://codeforg.netlify.app', 'http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Requested-With'],
   exposedHeaders: ['Authorization'],
